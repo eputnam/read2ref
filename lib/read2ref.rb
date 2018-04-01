@@ -1,4 +1,3 @@
-require 'pry'
 require_relative 'read2ref/readme'
 require_relative 'read2ref/manifest'
 
@@ -7,6 +6,11 @@ module Read2ref
 
     attr_accessor :mdhash
 
+    # Parses README file at path
+    # @param [String] path
+    #   Absolute path to the README file for the module
+    # @return [Hash]
+    #   Hash structured by resource with parameters underneath
     def parse_readme(path)
       puts "Processing readme #{path}"
       readme = Readme.new(path)
@@ -14,12 +18,16 @@ module Read2ref
       @mdhash = readme.to_hash
     end
 
+    # Parses and writes to manifest at path
+    # @param [String] path
+    #   Absolute path to the manifest file
+    # @return [void]
     def parse_manifest(path)
       puts "Processing manifest #{path}"
       manifest = Manifest.new(path)
       puts "NAME TOKEN: #{manifest.name_token}"
       name = manifest.name_token.value
-      manifest.write(path, @mdhash)
+      manifest.write(@mdhash)
     end
   end
 end

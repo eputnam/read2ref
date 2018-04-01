@@ -2,7 +2,6 @@ require 'commonmarker'
 
 module Read2ref
   class Readme
-
     attr_reader :ast
 
     def initialize(path)
