@@ -6,6 +6,7 @@ module Read2ref
 
     def initialize(path)
       @path = path
+      puts "Opening README: #{path}"
       @ast = CommonMarker.render_doc(File.read(path))
     end
 
@@ -19,8 +20,12 @@ module Read2ref
 	  hash_face[current_res] = {}
 	end
 	if node.type == :header && node.header_level == 5
-	  param = node.first_child.string_content
-	  current_param = param
+	  begin
+	    param = node.first_child.string_content
+	    current_param = param || ""
+	  rescue
+	    "Weird parameter name at #{node.sourcepos[:start_line]} of #{@path}"
+	  end
 	  #binding.pry if param == 'databases'
 	  param_desc = ""
 	  loop do
@@ -32,7 +37,11 @@ module Read2ref
 	      elsif child.type == :code
 		"`#{child.string_content}`"
 	      elsif child.type == :link
-		"[#{child.first_child.string_content}](#{child.url})"
+		begin
+		  "[#{child.first_child.string_content}](#{child.url})"
+		rescue
+		  "Problem with a link at #{child.sourcepos[:start_line]}"
+		end
 	      end 
 	    end.join
 	  end

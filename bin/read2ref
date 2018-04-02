@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require_relative "../lib/read2ref"
+
+Read2ref.run(ARGV[0],ARGV[1])

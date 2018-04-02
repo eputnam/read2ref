@@ -1,4 +1,6 @@
 require 'puppet-lint'
+require 'fileutils'
+require 'pry'
 
 module Read2ref
   class Manifest
@@ -7,7 +9,12 @@ module Read2ref
     def initialize(path)
       @path = path
       lexer = PuppetLint::Lexer.new
-      file = File.read(path)
+      begin
+	puts "Reading manifest at #{path}"
+	file = File.read(path)
+      rescue
+	puts "Could not read manifest at #{path}."
+      end
       @tokens = lexer.tokenise(file)
       PuppetLint::Data.tokens = @tokens
     end
@@ -61,13 +68,16 @@ module Read2ref
     #   Is the token of type :VARIABLE and is the next token either :WHITESPACE or :COMMA?
     def valid_parameter_token?(token)
       next_token_types = [ :WHITESPACE, :COMMA ]
-      token.type == :VARIABLE && next_token_types.include?(token.next_token.type)
+      token.type == :VARIABLE && 
+	next_token_types.include?(token.next_token.type) &&
+	!token.value.match(/::/)
     end
 
     # Assembles an array of parameter names from the list of parameter tokens
     # @return [Array]
     #   Collection of parameter name strings
     def parameters_array
+      return if parameter_tokens.nil?
       parameter_tokens.select { |token| token.value if valid_parameter_token?(token) }.map { |token| token.value }
     end
 
@@ -78,23 +88,27 @@ module Read2ref
     #   Hash from README. See Read2ref::Readme class.
     def write(hash)
       array = parameters_array
-      tmp_path = "#{File.dirname(@path)}/tmp#{File.basename(@path)}"
-      name = name_token.value
-      File.open(tmp_path,'w') do |file|
-	puts "Opening temp file for #{@path}"
-	unless array.empty?
-	  file.puts "# @summary"
-	  file.puts "#  "
+      unless array.nil?
+	name = name_token.value
+	puts "Writing comments for #{name}"
+	tmp_path = "#{File.dirname(@path)}/tmp#{File.basename(@path)}"
+	File.open(tmp_path,'w') do |file|
+	  unless array.empty?
+	    file.puts "# @summary"
+	    file.puts "#  "
+	  end
+	  array.each do |str|
+	    file.puts "# @param #{str}"
+	    file.puts "#  #{hash[name][str]}" if hash[name] && !hash[name].empty?
+	  end
+	  File.foreach(@path) do |line|
+	    file.puts line
+	  end
 	end
-	array.each do |str|
-	  file.puts "# @param #{str}"
-	  file.puts "#  #{hash[name][str]}" if hash[name] && !hash[name].empty?
-	end
-	File.foreach(@path) do |line|
-	  file.puts line
-	end
+	FileUtils.mv(tmp_path, @path)
+      else
+	puts "No parameters for #{@path}, nothing to write."
       end
-      FileUtils.mv(tmp_path, @path)
     end
 
   end
