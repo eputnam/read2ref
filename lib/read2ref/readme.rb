@@ -6,7 +6,7 @@ module Read2ref
 
     def initialize(path)
       @path = path
-      puts "Opening README: #{path}"
+      puts Rainbow("Opening README: #{path}").cyan
       @ast = CommonMarker.render_doc(File.read(path))
     end
 
@@ -24,7 +24,7 @@ module Read2ref
 	    param = node.first_child.string_content
 	    current_param = param || ""
 	  rescue
-	    "Weird parameter name at #{node.sourcepos[:start_line]} of #{@path}"
+	    puts Rainbow("Weird parameter name at line #{node.sourcepos[:start_line]} of #{@path}").red
 	  end
 	  #binding.pry if param == 'databases'
 	  param_desc = ""
@@ -40,7 +40,7 @@ module Read2ref
 		begin
 		  "[#{child.first_child.string_content}](#{child.url})"
 		rescue
-		  "Problem with a link at #{child.sourcepos[:start_line]}"
+		  puts Rainbow("Problem with a link at line #{child.sourcepos[:start_line]} of #{@path}").red
 		end
 	      end 
 	    end.join

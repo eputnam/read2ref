@@ -1,6 +1,6 @@
 require 'puppet-lint'
 require 'fileutils'
-require 'pry'
+require 'rainbow'
 
 module Read2ref
   class Manifest
@@ -13,10 +13,15 @@ module Read2ref
 	puts "Reading manifest at #{path}"
 	file = File.read(path)
       rescue
-	puts "Could not read manifest at #{path}."
+	print Rainbow("Could not read manifest at ").red
+	puts path
       end
       @tokens = lexer.tokenise(file)
       PuppetLint::Data.tokens = @tokens
+    end
+
+    def for_review?
+      @for_review
     end
 
     # Gets class or defined type indexes from the manifest
@@ -89,8 +94,9 @@ module Read2ref
     def write(hash)
       array = parameters_array
       unless array.nil?
+	@for_review = true
 	name = name_token.value
-	puts "Writing comments for #{name}"
+	puts Rainbow("Writing comments for #{name}").green
 	tmp_path = "#{File.dirname(@path)}/tmp#{File.basename(@path)}"
 	File.open(tmp_path,'w') do |file|
 	  unless array.empty?
@@ -107,7 +113,7 @@ module Read2ref
 	end
 	FileUtils.mv(tmp_path, @path)
       else
-	puts "No parameters for #{@path}, nothing to write."
+	puts Rainbow("No parameters for #{@path}, nothing to write.").yellow
       end
     end
 

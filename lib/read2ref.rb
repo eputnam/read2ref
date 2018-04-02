@@ -7,12 +7,20 @@ module Read2ref
     attr_accessor :mdhash
 
     def run(readme_path, manifest_glob)
-      readme = readme_path
+      readme = parse_readme(readme_path)
+      mdhash = readme.to_hash
+
       manifests = Dir.glob(manifest_glob)
-      parse_readme(readme)
+      manifests_for_review = []
       manifests.each do |manifest|
-        parse_manifest(manifest) if manifest.match(/\.pp/) && !manifest.match(/tmp/)
+	if manifest.match(/\.pp/) && !manifest.match(/tmp/)
+	  m = parse_manifest(manifest)
+	  m.write(mdhash)
+	  manifests_for_review.push(m.path) if m.for_review?
+	end
       end
+      puts Rainbow("\nComments were written to these manifests, please review for accuracy/completeness:").cyan
+      puts manifests_for_review
     end
 
     # Parses README file at path
@@ -22,7 +30,6 @@ module Read2ref
     #   Hash structured by resource with parameters underneath
     def parse_readme(path)
       readme = Readme.new(path)
-      @mdhash = readme.to_hash
     end
 
     # Parses and writes to manifest at path
@@ -30,9 +37,8 @@ module Read2ref
     #   Absolute path to the manifest file
     # @return [void]
     def parse_manifest(path)
-      manifest = Manifest.new(path)
-      name = manifest.name_token.value
-      manifest.write(@mdhash)
+      Manifest.new(path)
     end
+
   end
 end
